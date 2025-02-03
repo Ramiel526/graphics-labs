@@ -81,18 +81,14 @@ var plane = new Plane(planeNormal, planeCoordinate); // todo = new Plane(..., ..
 // var ceiling = new Plane(ceilNormal, ceilPoint);
 // var backWall = new Plane(bwNormal, bwPoint); 
 
-var scene = [sphere, ceiling, floor, leftWall, rightWall, backWall];
+// var scene = [sphere, ceiling, floor, leftWall, rightWall, backWall];
 
 // Cube
 
 // Cone
 
 // Light Source
-
 let lightPosition = new Vector3(1, 0, 0);
-// let lightRay = new ()
-
-
 
 // These are 3d definitions of the geometry available to us. They also provide a
 // "raycast" function that you can pass a ray to in order to find intersection
@@ -119,7 +115,6 @@ function generateRayForPixel(xPixelIndex, yPixelIndex) {
 
 	// Creates a ray from the eye toward the pixelCoordinate
 	var pixelRay = new Ray(eyeCoordinate, direction); // = new Ray(...);
-
 	return pixelRay;
 }
 
@@ -147,80 +142,59 @@ function updateAndRender(timeElapsed) {
 			//STEP 1. make a ray
 			// Uncomment this once you've coded generateRayForPixel
 			var pixelRay = generateRayForPixel(xPixelIndex, yPixelIndex);
+
 			//check for collision
 			// See if the ray intersects the sphere or the plane (or every object in our scene)
 			// Uncomment when your sphere or plane code is ready
-			var sphereResult = sphere.raycast(pixelRay);
-			var planeResult = plane.raycast(pixelRay);
+			// var sphereResult = sphere.raycast(pixelRay);
+			// var planeResult = plane.raycast(pixelRay);
 
 			let closestHit = null;
 			let minDistance = Infinity;
-			let color = 0.1;
-
+			// let color = 0.1;
 			let normalDotLight = 0.1;
-
-			let objectDistance = null; 
-			let lightDistance = null;
-			
-			let bounceRay = null; // shadow ray
 
 			for (const currentObject of objects) {
 				const currentHit = currentObject.raycast(pixelRay);
 				
 				if (currentHit.hit && currentHit.distance < minDistance) {
-					/*
-					* get information about the light source
-					*/
+					let lightDirection = Vector3.fromTo(currentHit.point, lightPosition).normalize();
+					normalDotLight = currentHit.normal.dot(lightDirection);
 
-				let lightDirection = Vector3.fromTo(currentHit.point, lightPosition);
-				lightDirection = lightDirection.normalize();	/* need the values of the light normal to fall between [-1, 1] */
-				normalDotLight = currentHit.normal.dot(lightDirection);
-				//	
-				bounceRay = new Ray(currentHit.point, lightDirection);
-
-				// objectDistance = 
-				// lightDistance = 
-				
-					if	(normalDotLight < -1) {
-					normalDotLight = -1
-					} else if (normalDotLight > 1){
-					normalDotLight = 1
-					};
+				if	(normalDotLight < -1) {
+					normalDotLight = -1;
+				} else if (normalDotLight > 1){
+					normalDotLight = 1;
+				};
 
 				closestHit = {
 					hit: currentHit.hit,
-					// distance: currentHit.distance,
+					point: currentHit.point,
 					object: currentObject
 				};
-				// closestHit = currentHit; 
+
+				// check for shadows
+				if (closestHit && isInShadow(closestHit.point, lightPosition, objects)) {
+					color = 0; //color pixel black;
+				};
+				
 				if (currentObject == sphere) {
 					color = 0.8;
-				}else{
+				} else {
 					color = 0.5;
 				}
+
 				minDistance = currentHit.distance;
 				};
-				// check for shadows
-				if (isInShadow) {
-					return color = 0; //color pixel black;
-				};
-			}
 
-		};
 
-			var isInShadow = function (currentRay, currentObject){/*boolean about line of sight to light*/
-				return currentObject.raycast(currentRay);
 			};
 
-
+		
 			setPixelColor(xPixelIndex, yPixelIndex, normalDotLight);
-		
-
-		
 			// determine which hit object is the closest (in case there is more than 1 hit)
 			// need to keep track of the closest hit object
 			// this will be important for where there is more than one object to keep track of
-			// let closestHit = null;
 
 			// if (closestHit){
 			// 	if(closestHit.object == sphereResult) {
@@ -232,27 +206,40 @@ function updateAndRender(timeElapsed) {
 			// 	};
 			// } else {
 			// 		setPixelColor(xPixelIndex, yPixelIndex, .1);
-			// };
+		};
+	};
+}
 
-			/*
-			//if we hit something {
-				setPixelColor(xPixelIndex, yPixelIndex, 0.5); // middle gray
-			//} else {
-				// we didn't hit anything, choose an appropriate backbround color
-				// setPixelColor(xPixelIndex, yPixelIndex, 0.1); // dark gray
-			//}
-			*/
+// -----------------------------------------------------------------------------
+function isInShadow (hitPoint, currentLightPosition, objects){/*boolean about line of sight to light*/
+	let currentLightDirection = currentLightPosition.clone().subtract(currentLightPosition).normalize();
+	let shadowRay = new Ray(hitPoint, currentLightDirection);
+	for (let nextObject of objects){
+		if (nextObject === hitPoint.object){
+			continue;
 		}
-	}
+
+		
+		// generate shadowRay
+		let result = nextObject.raycast(shadowRay) /*is intersection*/
+		if (result.hit){
+			let lightDistance = currentLightPosition.clone().subtract(shadowRay.origin).length();
+			let objectDistance = result.point.clone().subtract(shadowRay.origin).length();
+
+			if (objectDistance < lightDistance){
+				return true;
+			};
+		};
+	};
+	return false;
+}	
 
 	// Take our array of color data and give to the canvas to display
 	canvasContext.putImageData(imageData, 0, 0);
 
 	// Let the browser know it should call this function again when it's time to render
 	requestAnimationFrame(updateAndRender);
-}
 
-// We are ready to render, let the browser know
 requestAnimationFrame(updateAndRender);
 
 </script>

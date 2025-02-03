@@ -203,7 +203,7 @@ Vector3.angle = function(v1, v2) {
     */
     if ( !(v1 instanceof Vector3) || !(v2 instanceof Vector3)) {
         console.error('angle requires two vectors; "v1" and "v2"')
-        return null;V
+        return null;
     }
     
     const dotProduct = v1.dot(v2);
