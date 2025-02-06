@@ -93,19 +93,19 @@ let ceilNormal = new Vector3 (0, -1, 0);
 let bwNormal = new Vector3 (0, 0, 1);
 
 let floor = new Plane(floorNormal, floorPoint, color);
-let leftWall= new Plane(lwNormal, lwPoint, colorRed); 
+let leftWall= new Plane(lwNormal, lwPoint, colorRed);
 let rightWall = new Plane(rwNormal, rwPoint, colorGreen);
 let ceiling = new Plane(ceilNormal, ceilPoint, color);
-let backWall = new Plane(bwNormal, bwPoint, color); 
+let backWall = new Plane(bwNormal, bwPoint, color);
 
 // var scene = [sphere, ceiling, floor, leftWall, rightWall, backWall];
 
 const objects = [
-	sphere, 
-	ceiling, 
-	floor, 
-	leftWall, 
-	rightWall, 
+	sphere,
+	ceiling,
+	floor,
+	leftWall,
+	rightWall,
 	backWall
 ];
 
@@ -114,7 +114,7 @@ const objects = [
 // Cone
 
 // Light Source
-let lightPosition = new Vector3(1, .1, 0);
+let lightPosition = new Vector3(3, 0, 0);
 
 // These are 3d definitions of the geometry available to us. They also provide a
 // "raycast" function that you can pass a ray to in order to find intersection
@@ -152,7 +152,7 @@ function setPixelColor(xPixelIndex, yPixelIndex, shadeOfGray/* [0,1]*/) {
 	imageData.data[index + 1] = shadeOfGray * 255; // green channel
 	imageData.data[index + 2] = shadeOfGray * 255; // blue channel
 	imageData.data[index + 3] = 255;
-	
+
 	// var index = (yPixelIndex * pixelsAcross + xPixelIndex) * 4; // 4 bytes per pixel
 	// imageData.data[index + 0] = color.x * 255; // red channel
 	// imageData.data[index + 1] = color.y * 255; // green channel
@@ -167,7 +167,7 @@ function isInShadow (hitPoint, currentLightPosition, objects){/*boolean about li
 	let shadowRay = new Ray(hitPoint, currentLightDirection);
 	// console.log(shadowRay);
 	// console.log(currentLightDirection);
-	
+
 	for (let nextObject of objects){
 		if (nextObject === hitPoint.object){
 			continue;
@@ -186,7 +186,7 @@ function isInShadow (hitPoint, currentLightPosition, objects){/*boolean about li
 		};
 	};
 	return false;
-}	
+}
 
 // -----------------------------------------------------------------------------
 function updateAndRender(timeElapsed) {
@@ -194,7 +194,7 @@ function updateAndRender(timeElapsed) {
     // NOTE! You should only call setPixelColor once per pixel.  Otherwise, the
     // last time you call it will be the color and overwrite previous calls.
 	// loop through pixels in the image plane
-	var seconds = timeElapsed * 0.0001;
+	var seconds = timeElapsed * 0.0008;
 	lightPosition.x = Math.cos(seconds) * .5;
 	lightPosition.z = Math.sin(seconds) * .5;
 
@@ -216,7 +216,7 @@ function updateAndRender(timeElapsed) {
 
 			for (const currentObject of objects) {
 				const currentHit = currentObject.raycast(pixelRay);
-				
+
 				if (currentHit.hit && currentHit.distance < minDistance) {
 					let lightDirection = Vector3.fromTo(currentHit.point, lightPosition).normalize();
 					normalDotLight = currentHit.normal.dot(lightDirection);
@@ -236,7 +236,7 @@ function updateAndRender(timeElapsed) {
 				// check for shadows
 				// let shadow = isInShadow(closestHit.point, lightPosition, objects);
 				// if (shadow) {
-					
+
 				// 	color = 0;
 				// 	console.log('shadow detected', color);
 				// } else {
@@ -245,14 +245,15 @@ function updateAndRender(timeElapsed) {
 				// };
 				var inShadow = isInShadow(closestHit.point, lightPosition, objects);
 				if (closestHit && isInShadow(closestHit.point, lightPosition, objects)) {
-					normalDotLight = 0; //color pixel black;
+					normalDotLight -= .5; //color pixel black;
+					// ambientColor
 				// };
 					if (currentObject == sphere) {
 						color = 0.8;
 					} else {
 						color = 0.5;
 					};
-				
+
 				};
 				minDistance = currentHit.distance;
 				};
@@ -262,7 +263,7 @@ function updateAndRender(timeElapsed) {
 
 			setPixelColor(xPixelIndex, yPixelIndex, normalDotLight);
 			// setPixelColor(xPixelIndex, yPixelIndex, color);
-			
+
 		};
 	};
 
