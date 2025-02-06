@@ -96,7 +96,10 @@
     // -------------------------------------------------------------------------
     function initGL() {
         // todo #1 - uncomment below when ready
-        var canvas = document.getElementById(/* todo - choose correct id */);
+        var canvas = document.getElementById(
+            /* todo - choose correct id */
+            'webgl-canvas'
+        );
 
         try {
             gl = canvas.getContext("webgl");
@@ -201,11 +204,17 @@
 
         // todo
         // 1. create color buffer
+        
         // 2. bind color buffer
+
         // 3. create color array
+
         // 4. "buffer" color data
+
         // 5. store a reference to the color buffer on the triangleGeometry object
+
         //    triangleGeometry.colorBuffer = ??;
+
     }
 
     // -------------------------------------------------------------------------
@@ -257,9 +266,10 @@
         // todo #2
         // specify what portion of the canvas we want to draw to (all of it, full width and height)
         // uncomment when ready to implement
-        gl.viewport(0, 0, 100, 100);
-
+        // gl.viewport(0, 0, 100, 100);
+        // gl.viewport(0, 0, 950, 1000);
         // this is a new frame so let's clear out whatever happened last frame
+
         gl.clearColor(0.707, 0.707, 1, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
