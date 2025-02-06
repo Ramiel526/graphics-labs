@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="../math/vector3.js"></script>
+    <script src="../math/vector4.js"></script>
+    <script src="../math/matrix4.js"></script>
+    <script src="misc/test.js"></script>
+    <script src="misc/three.js"></script>
+</head>
+
+<body onload="testMatrix4()">
+<script>
+
+    // If any test fails this will be false
+    var reporter = new TestReporter();
+
+    //-----------------------------------------------------------------------------
+    function testMatrix4() {
+        reporter.reportText('<h2>Matrix4 Unit Tests</h2>');
+        reporter.reportText('Tests required to pass to earn a "B"<br><br>');
+
+        testMakeIdentity();
+        testMultiplyVector();
+        testMultiply();
+        testMakeScale();
+        testMakeRotationX();
+        testMakeRotationY();
+        testMakeRotationZ();
+        testMakeTranslation();
+        testMakePerspectiveProjection();
+        testMakeOrthographicProjection();
+
+        reporter.reportText('<br>Tests required to pass to earn an "A"<br><br>');
+
+        testTRSMatrix();
+        testCreateMoonMatrix();
+
+        reporter.reportFinalResults();
+
+        // testCrossProduct();
+    }
+
+    //-----------------------------------------------------------------------------
+    function testMakeIdentity() {
+        reporter.reportTestStart("makeIdentity");
+
+        try {
+            // Test Case 1: Basic Identity
+            var identity = new Matrix4();
+            identity.elements = Float32Array.from([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+
+            var m1 = new Matrix4();
+            m1.elements = Float32Array.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+            m1.makeIdentity();
+
+            assert(matrix4Equal(m1, identity, "matrix should be identity"), "matrix should be identity");
+
+            // Test Case 2: Make Identity on a Random Matrix
+            var m2 = new Matrix4();
+            m2.elements = Float32Array.from([9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9]);
+            m2.makeIdentity();
+            assert(matrix4Equal(m2, identity, "matrix should be identity after makeIdentity()"), "matrix should be identity after makeIdentity()");
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    function testMultiplyVector() {
+        reporter.reportTestStart("multiply vector");
+
+        try {
+            // Test Case 1: Standard Multiplication
+            var m1 = new Matrix4();
+            m1.elements = Float32Array.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+
+            var v1 = new Vector4(3, 2, 1, 1);
+            var expectedResult = new Vector4(14, 42, 70, 98);
+
+            var v2 = m1.multiplyVector(v1);
+            assert(vectorEqualVectors(v2, expectedResult), "matrix-vector multiplication");
+
+            // Test Case 2: Multiply by Zero Vector
+            var zeroVector = new Vector4(0, 0, 0, 0);
+            var m2 = m1.clone();
+            var zeroResult = m2.multiplyVector(zeroVector);
+            var expectedZero = new Vector4(0, 0, 0, 0);
+            assert(vectorEqualVectors(zeroResult, expectedZero), "multiplying by zero vector should yield zero vector");
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    function testMultiply() {
+        reporter.reportTestStart("multiply");
+
+        try {
+            // Test Case 1: Multiply Two Matrices
+            var matRight = new Matrix4();
+            matRight.elements = Float32Array.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+
+            var m1 = new Matrix4();
+            m1.elements = Float32Array.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+
+            var expectedResult = new Matrix4();
+            expectedResult.elements = Float32Array.from([
+                62, 68, 74, 80,
+                174, 196, 218, 240,
+                286, 324, 362, 400,
+                398, 452, 506, 560
+            ]);
+
+            m1.multiply(matRight);
+            assert(matrix4Equal(m1, expectedResult, "matrix multiply from right side"), "matrix multiply from right side");
+
+            // Test Case 2: Multiply by Identity Should Keep Matrix the Same
+            var m3 = new Matrix4();
+            m3.elements = Float32Array.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+            var identityM = new Matrix4();
+            for (var i = 0; i < 16; ++i) {
+                identityM.elements[i] = (i % 4 === Math.floor(i / 4)) ? 1 : 0;
+            }
+            var copy3 = m3.clone();
+            m3.multiply(identityM);
+            assert(matrix4Equal(m3, copy3, "multiplying by identity shouldn't change the matrix"), "multiplying by identity shouldn't change the matrix");
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    function testMakeScale() {
+        reporter.reportTestStart("makeScale");
+
+        try {
+            // Test Case 1: Standard Scale
+            var m1 = new Matrix4();
+            for (var i = 0; i < m1.elements.length; ++i) {
+                m1.elements[i] = Math.random();
+            }
+
+            var expected = new Matrix4();
+            expected.elements = Float32Array.from([
+                3, 0, 0, 0,
+                0, 4, 0, 0,
+                0, 0, 5, 0,
+                0, 0, 0, 1
+            ]);
+
+            m1.makeScale(3, 4, 5);
+            assert(matrix4Equal(m1, expected, "makeScale"), "makeScale");
+
+            // Test Case 2: Zero Scale
+            var zeroScale = new Matrix4();
+            zeroScale.elements = Float32Array.from([
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 1
+            ]);
+            var m2 = new Matrix4();
+            m2.makeScale(0, 0, 0);
+            assert(matrix4Equal(m2, zeroScale, "matrix should represent a zero scale"), "matrix should represent a zero scale");
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    function testMakeRotationX() {
+        reporter.reportTestStart("makeRotationX");
+
+        try {
+            // Test Case 1: 90 Degrees Rotation
+            var rotation = new Matrix4().makeRotationX(90);
+
+            var expectedResult = new Matrix4();
+            expectedResult.elements = Float32Array.from([
+                1, 0, 0, 0,
+                0, 0, -1, 0,
+                0, 1, 0, 0,
+                0, 0, 0, 1
+            ]);
+
+            assert(matrix4Equal(rotation, expectedResult, "testMakeRotationX"), "testMakeRotationX");
+
+            // Test Case 2: 0 Degrees Rotation Should Be Identity
+            var rotationZero = new Matrix4().makeRotationX(0);
+            var identity = new Matrix4();
+            for (var i = 0; i < 16; ++i) {
+                identity.elements[i] = (i % 4 === Math.floor(i / 4)) ? 1 : 0;
+            }
+            assert(matrix4Equal(rotationZero, identity, "makeRotationX(0) should be identity"), "makeRotationX(0) should be identity");
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    function testMakeRotationY() {
+        reporter.reportTestStart("makeRotationY");
+
+        try {
+            // Test Case 1: 90 Degrees Rotation
+            var rotation = new Matrix4().makeRotationY(90);
+
+            var expectedResult = new Matrix4();
+            expectedResult.elements = Float32Array.from([
+                0, 0, 1, 0,
+                0, 1, 0, 0,
+                -1, 0, 0, 0,
+                0, 0, 0, 1
+            ]);
+
+            assert(matrix4Equal(rotation, expectedResult, "testMakeRotationY"), "testMakeRotationY");
+
+            // Test Case 2: 180 Degrees Rotation
+            var rotation180 = new Matrix4().makeRotationY(180);
+            var expected180 = new Matrix4();
+            expected180.elements = Float32Array.from([
+                -1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, -1, 0,
+                0, 0, 0, 1
+            ]);
+            assert(matrix4Equal(rotation180, expected180, "makeRotationY(180) should flip x and z"), "makeRotationY(180) should flip x and z");
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    function testMakeRotationZ() {
+        reporter.reportTestStart("makeRotationZ");
+
+        try {
+            // Test Case 1: 90 Degrees Rotation
+            var rotation = new Matrix4().makeRotationZ(90);
+
+            var expectedResult = new Matrix4();
+            expectedResult.elements = Float32Array.from([
+                0, -1, 0, 0,
+                1, 0, 0, 0,
+                0, 0, 1, 0,
+                0, 0, 0, 1
+            ]);
+
+            assert(matrix4Equal(rotation, expectedResult, "testMakeRotationZ"), "testMakeRotationZ");
+
+            // Test Case 2: -90 Degrees Rotation
+            var rotationNeg90 = new Matrix4().makeRotationZ(-90);
+            var expectedNeg90 = new Matrix4();
+            expectedNeg90.elements = Float32Array.from([
+                0, 1, 0, 0,
+                -1, 0, 0, 0,
+                0, 0, 1, 0,
+                0, 0, 0, 1
+            ]);
+            assert(matrix4Equal(rotationNeg90, expectedNeg90, "makeRotationZ(-90) should rotate clockwise 90 degrees"), "makeRotationZ(-90) should rotate clockwise 90 degrees");
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    function testMakeTranslation() {
+        reporter.reportTestStart("makeTranslation");
+
+        try {
+            // Test Case 1: Positive Translation
+            var m1 = new Matrix4();
+            var v1 = new Vector3(1, 2, 3);
+            var expectedResult = new Matrix4();
+            expectedResult.elements = Float32Array.from([
+                1, 0, 0, 1,
+                0, 1, 0, 2,
+                0, 0, 1, 3,
+                0, 0, 0, 1
+            ]);
+
+            m1.makeTranslation(v1);
+            assert(matrix4Equal(m1, expectedResult, "testTranslation1"), "testTranslation1");
+
+            // Test Case 2: Positive Translation with Individual Components
+            var m1b = new Matrix4();
+            m1b.makeTranslation(1, 2, 3);
+            var expectedResultB = new Matrix4();
+            expectedResultB.elements = Float32Array.from([
+                1, 0, 0, 1,
+                0, 1, 0, 2,
+                0, 0, 1, 3,
+                0, 0, 0, 1
+            ]);
+            assert(matrix4Equal(m1b, expectedResultB, "testTranslation2"), "testTranslation2");
+
+            // Test Case 3: Negative Translation
+            var negativeTranslation = new Matrix4();
+            negativeTranslation.elements = Float32Array.from([
+                1, 0, 0, -2,
+                0, 1, 0, -4,
+                0, 0, 1, -6,
+                0, 0, 0, 1
+            ]);
+            var m2 = new Matrix4();
+            m2.makeTranslation(-2, -4, -6);
+            assert(matrix4Equal(m2, negativeTranslation, "testTranslation negative values"), "testTranslation negative values");
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    function testCrossProduct() {
+        reporter.reportTestStart("cross product");
+
+        try {
+            // Test Case 1: Standard Cross Product
+            var v17 = new Vector3(1, 0, 0);
+            var v18 = new Vector3(0, 1, 0);
+            var cross = v17.cross(v18);
+            var expected = new Vector3(0, 0, 1);
+            assert(vector3EqualVectors(cross, expected), "standard cross product");
+
+            // Test Case 2: Cross Product with Itself
+            var v19 = new Vector3(1, 2, 3);
+            var cross2 = v19.cross(v19);
+            var expectedZero = new Vector3(0, 0, 0);
+            assert(vector3EqualVectors(cross2, expectedZero), "crossing vector with itself yields zero vector");
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    function testMakePerspectiveProjection() {
+        reporter.reportTestStart("makePerspective");
+
+        try {
+            // Test Case 1: Standard Perspective Projection
+            var perspective = new Matrix4().makePerspective(90, 2, 1, 100);
+            var m33 = -1.0202020406723022;
+            var m34 = -2.0202019214630127;
+            var expectedResult = new Matrix4();
+            expectedResult.elements = Float32Array.from([
+                0.5, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, m33, m34,
+                0, 0, -1, 0
+            ]);
+
+            assert(matrix4Equal(perspective, expectedResult, "testMakePerspectiveProjection"), "testMakePerspectiveProjection");
+
+            // Test Case 2: Different Aspect Ratio and FOV
+            var perspective2 = new Matrix4().makePerspective(45, 1, 1, 10);
+            var f = 2.414213657379;  // approx 1 / tan(22.5 deg)
+            var m33_2 = -1.2222222089767; // -(far+near)/(far-near) for near=1, far=10
+            var m34_2 = -2.222222328186;  // -2*far*near/(far-near)
+            var expected2 = new Matrix4();
+            expected2.elements = Float32Array.from([
+                f, 0, 0, 0,
+                0, f, 0, 0,
+                0, 0, m33_2, m34_2,
+                0, 0, -1, 0
+            ]);
+            assert(matrix4Equal(perspective2, expected2, "testMakePerspectiveProjection (45 fov, aspect=1)"), "testMakePerspectiveProjection (45 fov, aspect=1)");
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    function testMakeOrthographicProjection() {
+        reporter.reportTestStart("makeOrthographic");
+
+        try {
+            // Test Case 1: Original Orthographic Projection
+            var orthographic = new Matrix4().makeOrthographic(-1, 3, 1, 2, 3, 23);
+            var m33 = -0.10000000149011612;
+            var m34 = -1.2999999523162842;
+            var expectedResult = new Matrix4();
+            expectedResult.elements = Float32Array.from([
+                0.5, 0, 0, -0.5,
+                0, -2, 0, 3,
+                0, 0, m33, m34,
+                0, 0, 0, 1
+            ]);
+
+            assert(matrix4Equal(orthographic, expectedResult, "testMakeOrthographicProjection - first case"), "testMakeOrthographicProjection - first case");
+
+            // Test Case 2: Corrected Orthographic Projection
+            var ortho2 = new Matrix4().makeOrthographic(-2, 2, -2, 2, 1, 10);
+            var zs = -2.0 / (10 - 1);   // -2/9 ≈ -0.222222
+            var zt = -(10 + 1) / 9;     // -11/9 ≈ -1.222222
+            var expectedOrtho2 = new Matrix4();
+            expectedOrtho2.elements = Float32Array.from([
+                0.5, 0, 0, 0,
+                0, -0.5, 0, 0, // Corrected Y scaling factor
+                0, 0, zs, zt,
+                0, 0, 0, 1
+            ]);
+
+            assert(matrix4Equal(ortho2, expectedOrtho2, "testMakeOrthographicProjection - second case"), "testMakeOrthographicProjection - second case");
+
+            // Test Case 3: Simpler Orthographic Projection
+            var ortho3 = new Matrix4().makeOrthographic(-2, 2, -2, 2, 1, 10);
+            var zs3 = -2.0 / (10 - 1);   // -2/9 ≈ -0.222222
+            var zt3 = -(10 + 1) / 9;     // -11/9 ≈ -1.222222
+            var expectedOrtho3 = new Matrix4();
+            expectedOrtho3.elements = Float32Array.from([
+                0.5, 0, 0, 0,
+                0, -0.5, 0, 0, // Corrected Y scaling factor
+                0, 0, zs3, zt3,
+                0, 0, 0, 1
+            ]);
+
+            assert(matrix4Equal(ortho3, expectedOrtho3, "testMakeOrthographicProjection 2"), "testMakeOrthographicProjection 2");
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    function testMakeLookAt() {
+        reporter.reportTestStart("makeLookAt");
+
+        try {
+            // Test Case 1: Standard LookAt
+            var eyePosition = new Vector3(-1, 1, 1);
+            var targetPosition = new Vector3(-1, 0, 0);
+            var worldUp = new Vector3(0, 1, 0);
+            var r = Math.SQRT2 / 2;
+
+            var lookAt = new Matrix4().makeLookAt(eyePosition, targetPosition, worldUp);
+            var expectedResult = new Matrix4();
+            expectedResult.elements = Float32Array.from([
+                1, 0, 0, -1,
+                0, r, r, 1,
+                0, -r, r, 1,
+                0, 0, 0, 1
+            ]);
+
+            assert(matrix4Equal(lookAt, expectedResult, "testMakeLookAt"), "testMakeLookAt");
+
+            // Test Case 2: Simpler LookAt with Eye at Origin
+            var eyePos2 = new Vector3(0, 0, 0);
+            var targetPos2 = new Vector3(0, 0, -1);
+            var worldUp2 = new Vector3(0, 1, 0);
+            var lookAt2 = new Matrix4().makeLookAt(eyePos2, targetPos2, worldUp2);
+            var expectedLookAt2 = new Matrix4();
+            expectedLookAt2.elements = Float32Array.from([
+                -1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 0,
+                0, 0, 0, 1
+            ]);
+            assert(matrix4Equal(lookAt2, expectedLookAt2, "testMakeLookAt with default forward"), "testMakeLookAt with default forward");
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    function testDefaultValues() {
+        reporter.reportTestStart("default values");
+
+        try {
+            // Test Case 1: Default Matrix Should Be Identity
+            var identity = new Matrix4();
+            for (var i = 0; i < 16; ++i) {
+                identity.elements[i] = (i % 4 === Math.floor(i / 4)) ? 1 : 0;
+            }
+
+            var m1 = new Matrix4();
+            assert(matrix4Equal(m1, identity, "default values"), "default values");
+
+            // Test Case 2: Another Newly Created Matrix Should Be Identity
+            var m2 = new Matrix4();
+            var identity2 = new Matrix4();
+            for (var i = 0; i < 16; ++i) {
+                identity2.elements[i] = (i % 4 === Math.floor(i / 4)) ? 1 : 0;
+            }
+            assert(matrix4Equal(m2, identity2, "another default matrix should be identity"), "another default matrix should be identity");
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    function testClone() {
+        reporter.reportTestStart("clone");
+
+        try {
+            // Test Case 1: Clone a Non-Identity Matrix
+            var m1 = new Matrix4();
+            m1.elements = Float32Array.from([
+                2, 4, 6, 8,
+                10, 12, 14, 16,
+                18, 20, 22, 24,
+                26, 28, 32, 36
+            ]);
+
+            var m2 = m1.clone();
+
+            assert(m1 !== m2, "clone should return a new instance");
+            assert(matrix4Equal(m1, m2, "clone values should match the original"), "clone values should match the original");
+
+            // Test Case 2: Clone an Identity Matrix
+            var identity = new Matrix4();
+            var cloneIdentity = identity.clone();
+            assert(identity !== cloneIdentity, "cloning identity should produce new instance");
+            assert(matrix4Equal(identity, cloneIdentity, "cloned identity should match original"), "cloned identity should match original");
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    function testSet() {
+        reporter.reportTestStart("set");
+
+        try {
+            // Test Case 1: Set Matrix to Specific Values
+            var m1 = new Matrix4();
+
+            for (var i = 0; i < 16; ++i) {
+                m1.elements[i] = (i + 1) * 2;
+            }
+
+            var m2 = new Matrix4().set(
+                2, 4, 6, 8,
+                10, 12, 14, 16,
+                18, 20, 22, 24,
+                26, 28, 30, 32
+            );
+
+            assert(matrix4Equal(m1, m2, "matrix set"), "matrix set");
+
+            // Test Case 2: Set All Zero
+            var zeroM = new Matrix4().set(
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0
+            );
+            for (var i = 0; i < 16; ++i) {
+                assert(floatEqual(zeroM.elements[i], 0), "matrix set to all zeros at index " + i);
+            }
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    function testCopy() {
+        reporter.reportTestStart("copy");
+
+        try {
+            // Test Case 1: Copy a Non-Identity Matrix
+            var m1 = new Matrix4();
+            m1.elements = Float32Array.from([
+                9, 8, 7, 6,
+                6, 5, 4, 3,
+                3, 2, 1, 0,
+                1, 2, 3, 4
+            ]);
+
+            var m2 = new Matrix4().copy(m1);
+
+            assert(m1 !== m2, "copy should only copy values");
+            assert(matrix4Equal(m1, m2, "values should be equal in a matrix copy"), "values should be equal in a matrix copy");
+
+            // Test Case 2: Copy an Identity Matrix
+            var identity = new Matrix4();
+            var copyIdentity = new Matrix4().copy(identity);
+            assert(identity !== copyIdentity, "copy of identity should be new instance");
+            assert(matrix4Equal(identity, copyIdentity, "copy of identity should match identity"), "copy of identity should match identity");
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    function testIdentity() {
+        reporter.reportTestStart("identity");
+
+        try {
+            // Test Case 1: Make Identity on a Non-Identity Matrix
+            var identity = new Matrix4();
+            for (var i = 0; i < 16; ++i) {
+                identity.elements[i] = (i % 4 === Math.floor(i / 4)) ? 1 : 0;
+            }
+
+            var m1 = new Matrix4();
+            m1.elements = Float32Array.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+            m1.makeIdentity();
+
+            assert(matrix4Equal(m1, identity, "matrix should be identity"), "matrix should be identity");
+
+            // Test Case 2: Make Identity After a Scale Should Revert It
+            var identity2 = new Matrix4();
+            identity2.makeScale(2, 2, 2);
+            identity2.makeIdentity();
+            var identityReinit = new Matrix4(); // Re-initialize identity
+            for (var i = 0; i < 16; ++i) {
+                identityReinit.elements[i] = (i % 4 === Math.floor(i / 4)) ? 1 : 0;
+            }
+            assert(matrix4Equal(identity2, identityReinit, "makeIdentity should override any scale"), "makeIdentity should override any scale");
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    function testMultiplyScalar() {
+        reporter.reportTestStart("multiply scalar");
+
+        try {
+            // Test Case 1: Multiply by 2
+            var m1 = new Matrix4();
+            m1.elements = Float32Array.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+            m1.multiplyScalar(2);
+
+            for (var i = 0; i < 16; ++i) {
+                assert(floatEqual(m1.elements[i], (i + 1) * 2), "scalar-matrix multiplication at index " + i);
+            }
+
+            // Test Case 2: Multiply by Zero
+            var m2 = new Matrix4();
+            m2.elements = Float32Array.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+            m2.multiplyScalar(0);
+            for (var i = 0; i < 16; ++i) {
+                assert(floatEqual(m2.elements[i], 0), "all elements should be zero after multiplying by 0 at index " + i);
+            }
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    function testDeterminant() {
+        reporter.reportTestStart("determinant");
+
+        try {
+            // Test Case 1: Determinant of Linearly Dependent Matrix
+            var m1 = new Matrix4();
+            m1.elements = Float32Array.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+
+            var det = m1.determinant();
+
+            assert(floatEqual(det, 0), "determinant of linearly dependent basis vectors should be 0");
+
+            // Test Case 2: Determinant of Identity Scale
+            var m2 = new Matrix4().makeScale(1, 1, 1);
+            var det2 = m2.determinant();
+            assert(floatEqual(det2, 1), "det of scale(1,1,1) is 1");
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    function testTranspose() {
+        reporter.reportTestStart("transpose");
+
+        try {
+            // Test Case 1: Transpose a Non-Identity Matrix
+            var m1 = new Matrix4();
+            m1.elements = Float32Array.from([
+                10, 20, 30, 40,
+                50, 60, 70, 80,
+                60, 70, 80, 90,
+                91, 92, 93, 94
+            ]);
+
+            var m2 = m1.clone();
+            m1.transpose();
+
+            for (var i = 0; i < 16; ++i) {
+                var row = Math.floor(i / 4);
+                var col = i % 4;
+                assert(floatEqual(m1.getElement(row, col), m2.getElement(col, row)), "transpose should reflect around the diagonal at index " + i);
+            }
+
+            // Test Case 2: Transpose Identity Matrix
+            var identity = new Matrix4();
+            var identityClone = identity.clone();
+            identity.transpose();
+            assert(matrix4Equal(identity, identityClone, "transposing identity should yield itself"), "transposing identity should yield itself");
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    function testInverse() {
+        reporter.reportTestStart("inverse");
+
+        try {
+            // Test Case 1: Inverse of a Non-Identity Matrix
+            var m1 = new Matrix4();
+            m1.elements = Float32Array.from([
+                1, 2, 2, 2,
+                1, 0, 0, 1,
+                1, 0, 0, 0,
+                1, 0, 1, 0
+            ]);
+            m1.inverse();
+
+            var expectedInverse = new Matrix4();
+            expectedInverse.elements = Float32Array.from([
+                0, 0, 1, 0,
+                0.5, -1, 1.5, -1,
+                0, 0, -1, 1,
+                0, 1, -1, 0
+            ]);
+
+            assert(matrix4Equal(m1, expectedInverse, "inverse should match the 'expected' values"), "inverse should match the 'expected' values");
+
+            // Test Case 2: Inverse of Identity Matrix
+            var identity = new Matrix4();
+            var identityClone = identity.clone();
+            identity.inverse();
+            assert(matrix4Equal(identity, identityClone, "inverse of identity should be identity"), "inverse of identity should be identity");
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    function testTRSMatrix() {
+        reporter.reportTestStart("TRS matrix");
+
+        try {
+            // Test Case 1: Standard TRS Matrix
+            var tMatrix = new Matrix4().makeTranslation(10, 0, 0);
+            var rMatrix = new Matrix4().makeRotationY(90);
+            var rMatrix2 = new Matrix4().makeRotationY(-90);
+            var sMatrix = new Matrix4().makeScale(10, 10, 10);
+
+            var tMatrixClone = tMatrix.clone();
+            var rMatrixClone = rMatrix.clone();
+            var sMatrixClone = sMatrix.clone();
+
+            var tempTest = new Matrix4().multiply(tMatrix).multiply(rMatrix2).multiply(sMatrix);
+            var v1 = 10;
+            var expectedValues = [
+                0, 0, v1, v1,
+                0, v1, 0, 0,
+                -v1, 0, 0, 0,
+                0, 0, 0, 1
+            ];
+            var expectedMatrix = new Matrix4();
+            expectedMatrix.elements = Float32Array.from(expectedValues);
+
+            var expectedValues2 = [
+                0, 0, -v1, v1,
+                0, v1, 0, 0,
+                v1, 0, 0, 0,
+                0, 0, 0, 1
+            ];
+            var expectedMatrix2 = new Matrix4();
+            expectedMatrix2.elements = Float32Array.from(expectedValues2);
+
+            var m1 = new Matrix4().createTRSMatrix(tMatrix, rMatrix, sMatrix);
+            var m2 = new Matrix4().createTRSMatrix(tMatrix, rMatrix2, sMatrix);
+
+            assert(matrix4Equal(m1, expectedMatrix, "TRS matrix not correct for first case"), "TRS matrix not correct for first case");
+            assert(matrix4Equal(m2, expectedMatrix2, "TRS matrix not correct for second case"), "TRS matrix not correct for second case");
+            assert(matrix4Equal(tMatrixClone, tMatrix, "TRS matrix modified translation"), "TRS matrix modified translation");
+            assert(matrix4Equal(rMatrixClone, rMatrix, "TRS matrix modified rotation"), "TRS matrix modified rotation");
+            assert(matrix4Equal(sMatrixClone, sMatrix, "TRS matrix modified scale"), "TRS matrix modified scale");
+
+            // Test Case 2: TRS with No Translation, No Rotation, No Scale Should Yield Identity
+            var noT = new Matrix4().makeTranslation(0, 0, 0);
+            var noR = new Matrix4().makeRotationZ(0);
+            var noS = new Matrix4().makeScale(1, 1, 1);
+            var trsNoChange = new Matrix4().createTRSMatrix(noT, noR, noS);
+            var identity = new Matrix4();
+            assert(matrix4Equal(trsNoChange, identity, "TRS with no changes should yield identity"), "TRS with no changes should yield identity");
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    function testCreateMoonMatrix() {
+        reporter.reportTestStart("moon matrix transform");
+
+        try {
+            // Test Case 1: Standard Moon Matrix
+            var v1 = 0.7071067690849304;
+            var v2 = 2.1213202476501465;
+            var earthMatrix = new Matrix4();
+            var values = [
+                v1, -v1, 0, -v1,
+                v1, v1, 0, v2,
+                0, 0, 1, 4,
+                0, 0, 0, 1
+            ];
+            earthMatrix.elements = Float32Array.from(values);
+
+            var p = new Vector3(1, 2, 4);
+            var m1 = new Matrix4().createMoonMatrix(45, p, earthMatrix);
+
+            v1 = 0.9999999403953552;
+            v2 = -2.707106590270996;
+            var v3 = 3.1213202476501465;
+            var expected = new Matrix4();
+            var expectedValues = [
+                0, -v1, 0, v2,
+                v1, 0, 0, v3,
+                0, 0, 1, 8,
+                0, 0, 0, 1
+            ];
+            expected.elements = Float32Array.from(expectedValues);
+
+            assert(matrix4Equal(m1, expected, "earth matrix not correct"), "earth matrix not correct");
+
+            // Test Case 2: Moon Matrix with 0 Rotation, Zero Position, Identity Earth Matrix
+            var zeroMoon = new Matrix4().createMoonMatrix(0, new Vector3(0, 0, 0), new Matrix4());
+            var identity = new Matrix4();
+            assert(matrix4Equal(zeroMoon, identity, "moon matrix with 0 rotation at origin in identity earthMatrix => identity"), "moon matrix with 0 rotation at origin in identity earthMatrix => identity");
+
+            reporter.reportTestEnd(true);
+        } catch (err) {
+            console.error(err);
+            reporter.reportTestEnd(false);
+        }
+    }
+
+    //-----------------------------------------------------------------------------
+    // Helper Functions
+
+    // Simple floating point comparison with epsilon
+    function floatEqual(a, b, epsilon = 1e-6) {
+        return Math.abs(a - b) < epsilon;
+    }
+
+    // Vector comparison between two Vector4 instances
+    function vectorEqualVectors(v1, v2, epsilon = 1e-6) {
+        return floatEqual(v1.x, v2.x, epsilon) && floatEqual(v1.y, v2.y, epsilon) && floatEqual(v1.z, v2.z, epsilon) && floatEqual(v1.w, v2.w, epsilon);
+    }
+
+    // Vector comparison between two Vector3 instances
+    function vector3EqualVectors(v1, v2, epsilon = 1e-6) {
+        return floatEqual(v1.x, v2.x, epsilon) && floatEqual(v1.y, v2.y, epsilon) && floatEqual(v1.z, v2.z, epsilon);
+    }
+
+    // Vector comparison between a Vector4 and individual components
+    function vectorEqualComponents(v, x, y, z, w = 1, epsilon = 1e-6) {
+        return floatEqual(v.x, x, epsilon) && floatEqual(v.y, y, epsilon) && floatEqual(v.z, z, epsilon) && floatEqual(v.w, w, epsilon);
+    }
+
+    // Matrix comparison (fixed to include the custom message)
+    function matrix4Equal(m1, m2, message) {
+        for (let i = 0; i < 16; i++) {
+            if (!floatEqual(m1.elements[i], m2.elements[i])) {
+                throw new Error((message ? message + ": " : "") + `Matrix mismatch at index ${i}: ${m1.elements[i]} !== ${m2.elements[i]}`);
+            }
+        }
+        return true;
+    }
+
+    function createMoonMatrix(currentRotationAngle, startingPosition, earthMatrix) {
+        return new Matrix4().createMoonMatrix(currentRotationAngle, startingPosition, earthMatrix);
+    }
+
+    //-----------------------------------------------------------------------------
+    // TestReporter Class Definition
+    // Assuming TestReporter is defined in "misc/test.js"
+    // If not, you need to define it here or include its definition.
+
+</script>
+
+<!-- CSS Styling Moved to the Bottom -->
+<style>
+    /* Ensure consistent box sizing */
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #f4f4f4;
+    }
+
+    .test-container {
+        max-width: 1050px;
+        /* Increased to accommodate two 500px elements */
+        margin: auto;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .section-header {
+        margin-top: 40px;
+        font-size: 1.5em;
+        font-weight: bold;
+        border-bottom: 2px solid #ddd;
+        padding-bottom: 10px;
+        color: #333;
+    }
+
+    table.test-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    table.test-table th,
+    table.test-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        vertical-align: top;
+        /* Align content to the top for better layout */
+    }
+
+    table.test-table th {
+        background-color: #f9f9f9;
+        text-align: left;
+    }
+
+    .passed {
+        color: #155724;
+        font-weight: bold;
+    }
+
+    .failed {
+        color: #721c24;
+        font-weight: bold;
+    }
+
+    .final-results {
+        text-align: center;
+        margin-top: 40px;
+    }
+
+    .final-results h1 {
+        color: #333;
+    }
+
+    .final-results img {
+        width: 500px;
+        /* Fixed width to match canvas */
+        height: 500px;
+        /* Fixed height to match canvas */
+    }
+
+    /* Ensure the orbit-root div doesn't constrain the canvas size */
+    #orbit-root {
+        width: 500px;
+        height: 500px;
+        margin: 0 auto;
+        /* Center the canvas within its container */
+    }
+</style>
+
+<!-- Test Container -->
+<div class="test-container">
+    <!-- Moved Table into the Final Results Section -->
+    <div class="final-results">
+        <table>
+            <tr>
+                <td style="text-align:center">
+                    using your moon matrix
+                </td>
+                <td style="text-align:center">
+                    expected result
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div id="orbit-root"></div>
+                </td>
+                <td>
+                    <img src="misc/expected-output.gif" alt="Expected Output">
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<script src="misc/orbit.js"></script>
+</body>
+
+</html>
