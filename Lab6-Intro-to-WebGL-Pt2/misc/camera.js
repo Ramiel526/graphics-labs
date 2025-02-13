@@ -1,3 +1,9 @@
+/*
+    *** Matt Notes: ***
+    purpose is to create a view matrix for rendering.
+    takes inverse of world matrix
+    Both quad and camera are at the origin.
+*/
 function Camera(input) {
     // The following two parameters will be used to automatically create the cameraWorldMatrix in this.update()
     this.cameraYaw = 0;

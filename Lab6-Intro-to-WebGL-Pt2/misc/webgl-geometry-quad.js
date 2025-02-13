@@ -4,6 +4,15 @@
 function WebGLGeometryQuad(gl) {
 	this.gl = gl;
 	this.worldMatrix = new Matrix4();
+    /*
+     *** TODO Matt ***  
+     - From sceene setup object type contains its own world matrix ^ see above.
+     - local vertex coordinate are dropped in as if they were world coordinates.
+     - what does that mean....? That currently the world view is oriented around
+        the plane of the quad. 
+
+        GOTO: .\camera.js
+    */
 
 	// -----------------------------------------------------------------------------
 	this.create = function() {

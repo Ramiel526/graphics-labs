@@ -75,6 +75,8 @@ function createScene() {
 
     // todo #1 - makeTranslation the quad so you can see it
     // groundGeometry.worldMatrix...
+    // ***Editing below to rotate the gnd to coordinate plane then translate to (0, 0, -10)
+    // groundGeometry.worldMatrix.make
 
     // todo #2 - rotate and scale the quad to make it "ground-like"
 
