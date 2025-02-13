@@ -1,13 +1,11 @@
-// Author: Matthieu S. Wooden
-// Co-Author: Tan, Thai 
 /*
  * An object representing a 4x4 matrix
  */
 
 var Matrix4 = function() {
     console.assert(this instanceof Matrix4, "Matrix4 constructor must be called with the 'new' operator");
-
     this.elements = new Float32Array(16);
+
     return this.makeIdentity();
 }
 
@@ -27,7 +25,7 @@ Matrix4.prototype = {
     copy: function(m) {
         for (var i = 0; i < 16; ++i) {
             this.elements[i] = m.elements[i];
-        };
+        }
 
         return this;
     },
@@ -50,56 +48,26 @@ Matrix4.prototype = {
     },
 
     // -------------------------------------------------------------------------
-    makeIdentity: function() {
-        // todo make this matrix be the identity matrix
-        this.elements.set([
-            1, 0, 0, 0,
-            0, 1, 0, 0,
-            0, 0, 1, 0, 
-            0, 0, 0, 1
-        ]);
-        
-        return this;
-    },
-
-    // -------------------------------------------------------------------------
     multiplyScalar: function(s) {
         for (var i = 0; i < 16; ++i) {
             this.elements[i] = this.elements[i] * s;
-        };
-        return this;
-
+        }
     },
 
     // -------------------------------------------------------------------------
     multiplyVector: function(v) {
-        // safety check
         if (!(v instanceof Vector4)) {
             console.error("Trying to multiply a 4x4 matrix with an invalid vector value");
         }
 
-        var result = new Vector4();
-        // todo
-        // set the result vector values to be the result of multiplying the
-        // vector v by 'this' matrix
-        for (let i = 0; i < 4; i++) {
-            let sum = 0;
-            for (let j = 0; j < 4; j++){
-                switch (j) {
-                    case 0: sum += this.elements[i * 4 +j] * v.x; break; 
-                    case 1: sum += this.elements[i * 4 +j] * v.y; break; 
-                    case 2: sum += this.elements[i * 4 +j] * v.z; break; 
-                    case 3: sum += this.elements[i * 4 +j] * v.w; break; 
-                };
-            };
-            switch (i) {
-                case 0: result.x = sum; break;
-                case 1: result.y = sum; break;
-                case 2: result.z = sum; break;
-                case 3: result.w = sum; break;
-            };
-        };
-        
+        // shorthand
+        var te = this.elements;
+        var result = new Vector4(
+            te[0] * v.x + te[1] * v.y + te[2] * v.z + te[3] * v.w,
+            te[4] * v.x + te[5] * v.y + te[6] * v.z + te[7] * v.w,
+            te[8] * v.x + te[9] * v.y + te[10] * v.z + te[11] * v.w,
+            te[12] * v.x + te[13] * v.y + te[14] * v.z + te[15] * v.w
+        );
         return result;
     },
 
@@ -109,237 +77,199 @@ Matrix4.prototype = {
         if (!(rightSideMatrix instanceof Matrix4)) {
             console.error("Trying to multiply a 4x4 matrix with an invalid matrix value");
         }
-        // todo - multiply 'this' * rightSideMatrix 
-        let result = [];
 
-        for (let i=0; i < 4; i++){ //i is the rows 
-            for (let j=0; j < 4; j++) { //j is the cols
-                let sum = 0; 
-                for (let k = 0; k < 4; k++) {         // k is the current row.col.
-                   sum += (this.elements[i * 4 + k] * rightSideMatrix.elements[k * 4 + j])
-                };
-                result[i * 4 + j ] = sum; 
-            };
-        };
-        this.elements.set(result);
+        // shorthand
+        var te = this.elements;
+        var oe = rightSideMatrix.elements;
+
+        var m11 = te[0] * oe[0] + te[1] * oe[4] + te[2] * oe[8] + te[3] * oe[12];
+        var m12 = te[0] * oe[1] + te[1] * oe[5] + te[2] * oe[9] + te[3] * oe[13];
+        var m13 = te[0] * oe[2] + te[1] * oe[6] + te[2] * oe[10] + te[3] * oe[14];
+        var m14 = te[0] * oe[3] + te[1] * oe[7] + te[2] * oe[11] + te[3] * oe[15];
+
+        var m21 = te[4] * oe[0] + te[5] * oe[4] + te[6] * oe[8] + te[7] * oe[12];
+        var m22 = te[4] * oe[1] + te[5] * oe[5] + te[6] * oe[9] + te[7] * oe[13];
+        var m23 = te[4] * oe[2] + te[5] * oe[6] + te[6] * oe[10] + te[7] * oe[14];
+        var m24 = te[4] * oe[3] + te[5] * oe[7] + te[6] * oe[11] + te[7] * oe[15];
+
+        var m31 = te[8] * oe[0] + te[9] * oe[4] + te[10] * oe[8] + te[11] * oe[12];
+        var m32 = te[8] * oe[1] + te[9] * oe[5] + te[10] * oe[9] + te[11] * oe[13];
+        var m33 = te[8] * oe[2] + te[9] * oe[6] + te[10] * oe[10] + te[11] * oe[14];
+        var m34 = te[8] * oe[3] + te[9] * oe[7] + te[10] * oe[11] + te[11] * oe[15];
+
+        var m41 = te[12] * oe[0] + te[13] * oe[4] + te[14] * oe[8] + te[15] * oe[12];
+        var m42 = te[12] * oe[1] + te[13] * oe[5] + te[14] * oe[9] + te[15] * oe[13];
+        var m43 = te[12] * oe[2] + te[13] * oe[6] + te[14] * oe[10] + te[15] * oe[14];
+        var m44 = te[12] * oe[3] + te[13] * oe[7] + te[14] * oe[11] + te[15] * oe[15];
+
+        this.set(m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44);
 
         return this;
     },
 
     // -------------------------------------------------------------------------
     premultiply: function(leftSideMatrix) {
-        // ignore this, the implementation will be distributed with the solution
+        // safety check
+        if (!(leftSideMatrix instanceof Matrix4)) {
+            console.error("Trying to multiply a 4x4 matrix with an invalid matrix value");
+        }
+
+        // shorthand
+        var oe = leftSideMatrix.elements;
+        var te = this.elements;
+
+        var m11 = oe[0] * te[0] + oe[1] * te[4] + oe[2] * te[8] + oe[3] * te[12];
+        var m12 = oe[0] * te[1] + oe[1] * te[5] + oe[2] * te[9] + oe[3] * te[13];
+        var m13 = oe[0] * te[2] + oe[1] * te[6] + oe[2] * te[10] + oe[3] * te[14];
+        var m14 = oe[0] * te[3] + oe[1] * te[7] + oe[2] * te[11] + oe[3] * te[15];
+
+        var m21 = oe[4] * te[0] + oe[5] * te[4] + oe[6] * te[8] + oe[7] * te[12];
+        var m22 = oe[4] * te[1] + oe[5] * te[5] + oe[6] * te[9] + oe[7] * te[13];
+        var m23 = oe[4] * te[2] + oe[5] * te[6] + oe[6] * te[10] + oe[7] * te[14];
+        var m24 = oe[4] * te[3] + oe[5] * te[7] + oe[6] * te[11] + oe[7] * te[15];
+
+        var m31 = oe[8] * te[0] + oe[9] * te[4] + oe[10] * te[8] + oe[11] * te[12];
+        var m32 = oe[8] * te[1] + oe[9] * te[5] + oe[10] * te[9] + oe[11] * te[13];
+        var m33 = oe[8] * te[2] + oe[9] * te[6] + oe[10] * te[10] + oe[11] * te[14];
+        var m34 = oe[8] * te[3] + oe[9] * te[7] + oe[10] * te[11] + oe[11] * te[15];
+
+        var m41 = oe[12] * te[0] + oe[13] * te[4] + oe[14] * te[8] + oe[15] * te[12];
+        var m42 = oe[12] * te[1] + oe[13] * te[5] + oe[14] * te[9] + oe[15] * te[13];
+        var m43 = oe[12] * te[2] + oe[13] * te[6] + oe[14] * te[10] + oe[15] * te[14];
+        var m44 = oe[12] * te[3] + oe[13] * te[7] + oe[14] * te[11] + oe[15] * te[15];
+
+        this.set(m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44);
+
+        return this;
+    },
+
+    // -------------------------------------------------------------------------
+    makeIdentity: function() {
+        this.set(
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        )
         return this;
     },
 
     // -------------------------------------------------------------------------
     makeScale: function(x, y, z) {
-        // todo make this matrix into a pure scale matrix based on (x, y, z)
-        this.elements.set([
-            x, 0, 0, 0,
-            0, y, 0, 0,
-            0, 0, z, 0,
-            0, 0, 0, 1
-        ]);
-
+        // laid out for clarity, not performance
+        this.makeIdentity();
+        this.elements[0] = x;
+        this.elements[5] = y;
+        this.elements[10] = z;
         return this;
     },
 
     // -------------------------------------------------------------------------
     makeRotationX: function(degrees) {
-        // todo - convert to radians
-        let rad = degrees * (Math.PI / 180);
-        let cosine = Math.cos(rad);
-        let sine = Math.sin(rad);
+        var radians = degrees * Math.PI / 180;
 
-        // shortcut - use in place of this.elements
         var e = this.elements;
+        var c = Math.cos(radians);
+        var s = Math.sin(radians);
 
-        // todo - set every element of this matrix to be a rotation around the x-axis
-        // e.makeScale(1, cos, -sine);
-        e.set([
-            1 , 0, 0, 0, 
-            0, cosine, -sine , 0,
-            0, sine, cosine, 0, 
-            0, 0, 0, 1
-        ]);
+        e[0] = 1; e[1] = 0; e[2] = 0; e[3] = 0;
+        e[4] = 0; e[5] = c; e[6] = -s; e[7] = 0;
+        e[8] = 0; e[9] = s; e[10] = c; e[11] = 0;
+        e[12] = 0; e[13] = 0; e[14] = 0; e[15] = 1;
 
         return this;
     },
 
     // -------------------------------------------------------------------------
     makeRotationY: function(degrees) {
-        // todo - convert to radians
-        // var radians = ...
+        var radians = degrees * Math.PI / 180;
 
-        let rad = degrees * (Math.PI / 180);
-        let cosine = Math.cos(rad);
-        let sine = Math.sin(rad);
-
-        // shortcut - use in place of this.elements
         var e = this.elements;
+        var c = Math.cos(radians);
+        var s = Math.sin(radians);
 
-        // todo - set every element of this matrix to be a rotation around the y-axis
-
-        e.set([
-            cosine, 0, sine, 0, 
-            0, 1, 0, 0, 
-            -sine, 0, cosine, 0,
-            0, 0, 0, 1
-        ]);
+        e[0] = c; e[1] = 0; e[2] = s; e[3] = 0;
+        e[4] = 0; e[5] = 1; e[6] = 0; e[7] = 0;
+        e[8] = -s; e[9] = 0; e[10] = c; e[11] = 0;
+        e[12] = 0; e[13] = 0; e[14] = 0; e[15] = 1;
 
         return this;
     },
+
 
     // -------------------------------------------------------------------------
     makeRotationZ: function(degrees) {
-        // todo - convert to radians
+        var radians = degrees * Math.PI / 180;
 
-        let rad = degrees * (Math.PI / 180);
-        let cosine = Math.cos(rad);
-        let sine = Math.sin(rad);
-
-        // shortcut - use in place of this.elements
         var e = this.elements;
+        var c = Math.cos(radians);
+        var s = Math.sin(radians);
 
-        // todo - set every element of this matrix to be a rotation around the z-axis
-        e.set([
-            cosine, -sine, 0, 0,
-            sine, cosine, 0, 0,
-            0, 0, 1, 0,
-            0, 0, 0, 1
-        ]);
-        return this;
-    },
-
-    // -------------------------------------------------------------------------
-    makeTranslation: function(arg1, arg2, arg3) {
-        // todo - wipe out the existing matrix and make it a pure translation
-        //      - If arg1 is a Vector3 or Vector4, use its components and ignore
-        //        arg2 and arg3. O.W., treat arg1 as x, arg2 as y, and arg3 as z
-        let e = this.elements;
-        let x, y, z = null;
-
-        if (arg1 instanceof Vector4) {
-            //...
-            x = arg1.x;
-            y = arg1.y;
-            z = arg1.z;
-
-        } else if (arg1 instanceof Vector3) {
-            //...
-            x = arg1.x;
-            y = arg1.y;
-            z = arg1.z;
-
-
-        } else {
-            //...
-            x = arg1;
-            y = arg2;
-            z = arg3;
-
-
-        }
-        //
-        e.set([
-            1, 0, 0, x,
-            0, 1, 0, y,
-            0, 0, 1, z,
-            0, 0, 0, 1
-        ])
+        e[0] = c; e[1] = -s; e[2] = 0; e[3] = 0;
+        e[4] = s; e[5] = c; e[6] = 0; e[7] = 0;
+        e[8] = 0; e[9] = 0; e[10] = 1; e[11] = 0;
+        e[12] = 0; e[13] = 0; e[14] = 0; e[15] = 1;
 
         return this;
     },
 
     // -------------------------------------------------------------------------
     makePerspective: function(fovy, aspect, near, far) {
-        // project the x and y onto near plane
-        // remap z coord such that near === -1 and far === 1;
+        var fovyRads = (Math.PI / 180) * fovy;
+        var t = near * Math.tan(fovyRads / 2);
+        var r = t * aspect;
 
-        // todo - convert fovy to radians
-        var fovyRads = fovy * (Math.PI / 180);
+        // laid out for clarity, not performance
+        this.makeIdentity();
 
-        // todo -compute t (top) and r (right)
-        let top = Math.tan(fovyRads / 2) * near ; 
-        let right = top * aspect; 
-
-        // shortcut - use in place of this.elements
         var e = this.elements;
-
-        // todo - set every element to the appropriate value
-
-        e.set([
-            near/right, 0, 0, 0,
-            0, near/top, 0, 0, 
-            0, 0, (-1 * (near + far)/ (far - near)), (-2 * far * near /(far - near)),
-            0, 0, -1, 0
-        ]);
+        e[0] = near / r;
+        e[5] = near / t;
+        e[10] = -(far + near) / (far - near);
+        e[11] = (-2 * near * far) / (far - near);
+        e[14] = -1;
+        e[15] = 0; // easy to forget this one (that lazy identity call...)
 
         return this;
     },
 
     // -------------------------------------------------------------------------
     makeOrthographic: function(left, right, top, bottom, near, far) {
-        // shortcut - use in place of this.elements
-        var e = this.elements;
+        // laid out for clarity, not performance
+        this.makeIdentity();
 
-        // todo - set every element to the appropriate value
-        e.set([
-            (2 / (right - left)), 0, 0, (-1 * (right + left) / (right - left)),
-            0, (2 / (top - bottom)), 0, (-1 * (top + bottom) / (top - bottom)),
-            0, 0, (-2 / (far - near)), (-1 * (far + near) / (far - near)),
-            0, 0, 0, 1
-        ])
+        var e = this.elements;
+        e[0] = 2 / (right - left);
+        e[3] = -(right + left) / (right - left);
+        e[5] = 2 / (top - bottom);
+        e[7] = -(top + bottom) / (top - bottom);
+        e[10] = -2 / (far - near);
+        e[11] = -(far + near) / (far - near);
 
         return this;
     },
 
     // -------------------------------------------------------------------------
-    // @translation - a Matrix4 translation matrix
-    // @rotation - a Matrix4 rotation Matrix
-    // @scale - a Matrix4 scale matrix
-    createTRSMatrix: function(translation, rotation, scale) {
-        // todo - create a matrix that combines translation, rotation, and scale such
-        //        that TRANSFORMATIONS take place in the following order: 1) scale,
-        //        2) rotation, and 3) translation. The values of translation, rotation,
-        //        and scale should NOT be modified.
+    makeTranslation: function(arg1, arg2, arg3) {
+        // laid out for clarity, not performance
+        this.makeIdentity();
 
-        var trsMatrix = new Matrix4();
-
-        trsMatrix.multiply(translation);
-        trsMatrix.multiply(rotation);
-        trsMatrix.multiply(scale);
-
-        return trsMatrix;
-    },
-
-    // -------------------------------------------------------------------------
-    // @currentRotationAngle - the angle of rotation around the earth
-    // @offsetFromEarth - the relative displacement from the earth
-    // @earthTransform - the transformation used to apply to the earth
-    createMoonMatrix: function(currentRotationAngle, offsetFromEarth, earthTransform) {
-
-        // todo - create a matrix that combines translation and rotation such that when
-        //        it is applied to a sphere starting at the origin, moves the sphere to 
-        //        orbit the earth.  The displacement from the earth is given by  
-        //        "offsetFromEarth" and the current rotation around the earth (z-axis)
-        //        is given by "currentRotationAngle" degrees.
-
-        // Note: Do NOT change earthTransform but do use it, it already has the rotation and translation for the earth
-
-        var moonMatrix = new Matrix4();
-
-        let moonToEarthRot = new Matrix4().makeRotationZ(currentRotationAngle);
-        let moonEarthPos = new Matrix4().makeTranslation(offsetFromEarth);
-
-        // todo - combine all necessary matrices necessary to achieve the desired effect
-
-        moonMatrix.multiply(earthTransform);
-        moonMatrix.multiply(moonToEarthRot);
-        moonMatrix.multiply(moonEarthPos);
-    
-        return moonMatrix;
+        if (arg1 instanceof Vector4) {
+            this.elements[3] = arg1.x;
+            this.elements[7] = arg1.y;
+            this.elements[11] = arg1.z;
+            this.elements[15] = arg1.w;
+        }
+        else if (arg1 instanceof Vector3) {
+            this.elements[3] = arg1.x;
+            this.elements[7] = arg1.y;
+            this.elements[11] = arg1.z;
+        } else {
+            this.elements[3] = arg1;
+            this.elements[7] = arg2;
+            this.elements[11] = arg3;
+        }
+        return this;
     },
 
     // -------------------------------------------------------------------------
@@ -349,7 +279,7 @@ Matrix4.prototype = {
         // laid out for clarity, not performance
         var m11 = e[0]; var m12 = e[1]; var m13 = e[2]; var m14 = e[3];
         var m21 = e[4]; var m22 = e[5]; var m23 = e[6]; var m24 = e[7];
-        var m31 = e[8]; var m32 = e[9]; var m33 = e[10]; var m34 = e[11];
+        var m31 = e[8]; var m32 = e[8]; var m33 = e[9]; var m34 = e[10];
         var m41 = e[12]; var m42 = e[13]; var m43 = e[14]; var m44 = e[15];
 
         var det11 = m11 * (m22 * (m33 * m44 - m34 * m43) +
@@ -387,7 +317,6 @@ Matrix4.prototype = {
         return this;
     },
 
-
     // -------------------------------------------------------------------------
     inverse: function() {
         // based on http://www.euclideanspace.com/maths/algebra/matrix/functions/inverse/fourD/index.htm
@@ -409,7 +338,7 @@ Matrix4.prototype = {
         if (det === 0) {
             var msg = "can't invert matrix, determinant is 0";
             console.warn(msg);
-            return this.makeIdentity();
+            return this.identity();
         }
 
         var detInv = 1 / det;
@@ -451,4 +380,5 @@ Matrix4.prototype = {
         return this;
     }
 };
+
 
