@@ -70,15 +70,27 @@ function createShaders(loadedAssets) {
 
 // -------------------------------------------------------------------------
 function createScene() {
+    // TRS translation rotation scale
+    // multiply left <- right 
     groundGeometry = new WebGLGeometryQuad(gl);
     groundGeometry.create();
 
     // todo #1 - makeTranslation the quad so you can see it
     // groundGeometry.worldMatrix...
     // ***Editing below to rotate the gnd to coordinate plane then translate to (0, 0, -10)
-    // groundGeometry.worldMatrix.make
+    // var groundPosition = (0, 0, -10); // new var to hold ground locationoi
+    var rotMat = new Matrix4();
+    var transMat =  new Matrix4();
+    var scaleMat = new Matrix4();
+
+    rotMat.makeRotationX(-90)
+    scaleMat.makeScale(10, 10, 10)
+    transMat.makeTranslation(0,-1, 10);
+    // transMat.makeTranslation(groundPosition);
 
     // todo #2 - rotate and scale the quad to make it "ground-like"
+    
+    groundGeometry.worldMatrix.multiply(transMat.multiply(rotMat.multiply(scaleMat)));
 
     // todo #3 - create the sphere geometry
     // sphereGeometry = ?

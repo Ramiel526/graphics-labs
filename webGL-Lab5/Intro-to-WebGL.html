@@ -373,7 +373,6 @@
         // todo - you will need to calculate the time elapsed since the start of the program
         //        and set up the uniform (like other uniforms) or the value below will never change
         gl.uniform1f(shaderProgram.timeUniform, time.secondsElapsedSinceStart);
-
         gl.drawArrays(gl.LINES, 0, lineGridGeometry.bufferItemCount);
     }
 
