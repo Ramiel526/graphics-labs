@@ -6,6 +6,10 @@ uniform float uAlpha;
 // todo #3 - receive texture coordinates and verify correctness by 
 // using them to set the pixel color 
 
+// uCoord
+
+// vCoord
+
 // todo #12 - animate the texture by adding time to the texture coordinates
 
 void main(void) {

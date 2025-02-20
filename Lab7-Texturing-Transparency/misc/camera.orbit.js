@@ -1,3 +1,7 @@
+/**Contains
+ * TODO #1 jmp line 19
+ * TODO #10 jmp line 26
+ */
 function OrbitCamera(input) {
     this.cameraWorldMatrix = new Matrix4();
     this.cameraTarget = new Vector4(0, 0, 0, 1);
@@ -14,12 +18,15 @@ function OrbitCamera(input) {
     // -------------------------------------------------------------------------
     this.getViewMatrix = function() {
         // todo #1 - return the correct view matrix (you will need to use "clone")
-        return new Matrix4();
+        return this.cameraWorldMatrix.clone().inverse();
+        // return new Matrix4();
     }
 
     // -----------------------------------------------------------------------------
     this.getPosition = function() {
         // todo #10 - return a vector4 of the camera's world position contained in its matrix
+        let camWorldPos = new vec4(OrbitCamera.getViewMatrix());
+        return camWorldPos;
     }
 
     // -------------------------------------------------------------------------
